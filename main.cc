@@ -7,8 +7,8 @@
 using namespace std;
 
 void calculate_shortest_path(int* mat, const size_t& n) {
-    #pragma omp parallel for
     for (int k = 0; k < n; k++) {
+        #pragma omp parallel for
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 int i0 = i*n + j;
@@ -49,6 +49,7 @@ int main(int argc, char** argv) {
     omp_set_dynamic(0);
     omp_set_num_threads(n_thread);
     int* mat = (int*) malloc(sizeof(int) * num_nodes);
+    int* ans = (int*) malloc(sizeof(int) * num_nodes);
     GenMatrix(mat, size_mat);
 
     #ifdef DEBUG
@@ -60,24 +61,28 @@ int main(int argc, char** argv) {
     int sequential_time = time_diff(start_time, end_time);
     #endif
 
-    gettimeofday(&start_time, NULL);
-    if (n_thread > 1) {
-        calculate_shortest_path(mat, size_mat);
-    } else {
-        ST_APSP(mat, size_mat);
+    int parallel_time = 0;
+    for (int t = 0; t < repeat; t++) {
+        memcpy(ans, mat,  sizeof(int) * num_nodes);
+        gettimeofday(&start_time, NULL);
+        if (n_thread > 1) {
+            calculate_shortest_path(ans, size_mat);
+        } else {
+            ST_APSP(ans, size_mat);
+        }
+        gettimeofday(&end_time, NULL);
+        parallel_time += time_diff(start_time, end_time);
     }
-    gettimeofday(&end_time, NULL);
-    int parallel_time = time_diff(start_time, end_time);
 
     #ifdef DEBUG
     cout << "Sequential time: " << sequential_time << " usec." << endl;
     cout << "parallel time: " << parallel_time << " usec." << endl;
-    if (CmpArray(mat, ref, num_nodes)) {
+    if (CmpArray(ans, ref, num_nodes)) {
         cout << "Parallel answer is correct!" << endl;
     } else {
         cout << "Parallel answer is wrong!" << endl;
     }
     #else
-    cout << parallel_time << endl;
+    cout << n_thread << "\t" << size_mat << "\t" << parallel_time << endl;
     #endif
 }
