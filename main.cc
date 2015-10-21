@@ -8,6 +8,7 @@ using namespace std;
 
 void calculate_shortest_path(int* mat, const size_t& n) {
     for (int k = 0; k < n; k++) {
+        // #pragma omp parallel for schedule(dynamic, 120) collapse(2)
         #pragma omp parallel for
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
